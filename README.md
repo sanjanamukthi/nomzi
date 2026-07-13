@@ -1,36 +1,48 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🍽️ Nomzi
 
-## Getting Started
+**Nomzi** is an interactive food-discovery application designed to help users discover food recommendations based on their mood and situation through a preference-based matching experience.
 
-First, run the development server:
+> 🚧 **Status:** Work in Progress — Nomzi is actively under development, with new features and improvements being added.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## ✨ About the Project
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Choosing what to eat can sometimes be surprisingly difficult. Nomzi aims to make food discovery more interactive and personalized by helping users find recommendations that match how they feel and what kind of moment they're in.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Users can select preferences such as their current mood and situation, and Nomzi dynamically recommends dishes based on those choices.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 🚀 Features
 
-## Learn More
+- Mood-based food recommendations
+- Situation-based food matching
+- Interactive preference selection
+- Dynamic recommendation logic
+- Visual food cards with dish images
+- Responsive and user-friendly interface
 
-To learn more about Next.js, take a look at the following resources:
+## 🛠️ Tech Stack
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- **Next.js**
+- **React**
+- **TypeScript**
+- **JavaScript**
+- **CSS**
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## 💡 How It Works
 
-## Deploy on Vercel
+1. The user selects their current mood.
+2. The user chooses a situation, such as a solo night, study session, date night, friends over, or quick break.
+3. Nomzi processes these preferences using recommendation logic.
+4. A matching food recommendation is dynamically displayed to the user.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## 📁 Project Structure
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```text
+nomzi/
+├── app/
+│   ├── globals.css
+│   ├── layout.tsx
+│   └── page.tsx
+├── public/
+│   └── images/
+├── package.json
+└── README.md
