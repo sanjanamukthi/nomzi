@@ -5,7 +5,11 @@ import Image from "next/image";
 export default function Home() {
   const [selectedMood, setSelectedMood] = useState("Comfort Me");
   const [selectedSituation, setSelectedSituation] = useState("Solo Night");
+  const [selectedPriority, setSelectedPriority] = useState("Best Overall");
   const [showPerfectMatch, setShowPerfectMatch] = useState(false);
+  const [surpriseIndex, setSurpriseIndex] = useState<number | null>(null);
+  const [matchFeedback, setMatchFeedback] = useState<"liked" | "disliked" | null>(null);
+  const [showDishDetails, setShowDishDetails] = useState(false);
   const matchMessages: Record<string, Record<string, string>> = {
   "Comfort Me": {
     "Solo Night":
@@ -116,6 +120,7 @@ const situations = [
       time: "25–30 min",
       price: "₹289",
       match: 97,
+      comfortScore: 10,
       image: "/images/creamy-paneer-pasta.jpg",
     },
     {
@@ -124,6 +129,7 @@ const situations = [
       time: "30–35 min",
       price: "₹319",
       match: 95,
+      comfortScore: 9,
       image: "/images/paneer-butter-masala.jpg",
     },
     {
@@ -132,6 +138,7 @@ const situations = [
       time: "20–25 min",
       price: "₹229",
       match: 92,
+      comfortScore: 9,
       image: "/images/cheesy-baked-momos.jpg",
     },
   ],
@@ -143,6 +150,7 @@ const situations = [
       time: "20–25 min",
       price: "₹269",
       match: 98,
+      comfortScore: 7,
       image: "/images/fiery-chilli-paneer.jpg",
     },
     {
@@ -151,6 +159,7 @@ const situations = [
       time: "20–25 min",
       price: "₹239",
       match: 96,
+      comfortScore: 8,
       image: "/images/schezwan-noodles.jpg",
     },
     {
@@ -159,6 +168,7 @@ const situations = [
       time: "25–30 min",
       price: "₹249",
       match: 94,
+      comfortScore: 7,
       image: "/images/spicy-tandoori-momos.jpg",
     },
   ],
@@ -170,6 +180,7 @@ const situations = [
       time: "20–25 min",
       price: "₹299",
       match: 97,
+      comfortScore: 7,
       image: "/images/paneer-power-bowl.jpg",
     },
     {
@@ -178,6 +189,7 @@ const situations = [
       time: "15–20 min",
       price: "₹259",
       match: 94,
+      comfortScore: 6,
       image: "/images/avocado-toast.jpg",
     },
     {
@@ -186,6 +198,7 @@ const situations = [
       time: "15–20 min",
       price: "₹279",
       match: 92,
+      comfortScore: 5,
       image: "/images/mediterranean-salad.jpg",
     },
   ],
@@ -197,6 +210,7 @@ const situations = [
       time: "15–20 min",
       price: "₹199",
       match: 99,
+      comfortScore: 9,
       image: "/images/chocolate-lava-cake.jpg",
     },
     {
@@ -205,6 +219,7 @@ const situations = [
       time: "20–25 min",
       price: "₹249",
       match: 96,
+      comfortScore: 8,
       image: "/images/classic-tiramisu.jpg",
     },
     {
@@ -213,9 +228,27 @@ const situations = [
       time: "15–20 min",
       price: "₹219",
       match: 94,
+      comfortScore: 8,
       image: "/images/belgian-waffle.jpg",
     },
   ],
+};
+
+const priorityMessages: Record<string, string> = {
+  "Best Overall":
+    "Nomzi is balancing your mood and situation to find the strongest overall match for this moment.",
+
+  "Quickest":
+    "Short on time? Nomzi is finding the fastest option that still fits your mood and moment.",
+
+  "Budget-friendly":
+    "Great food doesn't need to stretch your budget—Nomzi is finding the most affordable match for you.",
+
+  "Most comforting":
+    "You chose comfort above all else, so Nomzi is finding the coziest, most satisfying option for this moment.",
+
+  "Something new":
+    "Ready to break from the usual? Nomzi is choosing something different that still fits the mood you're in.",
 };
 
 const currentRecommendations =
@@ -228,8 +261,95 @@ const currentRecommendations =
   "Quick Break": 2,
 };
 
+const baseMatchIndex = situationDishIndex[selectedSituation];
+
+const cheapestDishIndex = currentRecommendations.reduce(
+  (cheapestIndex, dish, currentIndex, dishes) => {
+    const currentPrice = Number(dish.price.replace(/[^\d]/g, ""));
+    const cheapestPrice = Number(
+      dishes[cheapestIndex].price.replace(/[^\d]/g, "")
+    );
+        return currentPrice < cheapestPrice ? currentIndex : cheapestIndex;
+  },
+  0
+);
+    const quickestDishIndex = currentRecommendations.reduce(
+  (quickestIndex, dish, currentIndex, dishes) => {
+    const getMinimumTime = (time: string) =>
+      Number(time.match(/\d+/)?.[0] ?? Infinity);
+
+    const currentTime = getMinimumTime(dish.time);
+    const quickestTime = getMinimumTime(dishes[quickestIndex].time);
+
+    return currentTime < quickestTime ? currentIndex : quickestIndex;
+  },
+  0
+);
+
+
+const mostComfortingDishIndex = currentRecommendations.reduce(
+  (mostComfortingIndex, dish, currentIndex, dishes) => {
+    const currentComfortScore = dish.comfortScore;
+    const highestComfortScore = dishes[mostComfortingIndex].comfortScore;
+
+    return currentComfortScore > highestComfortScore
+      ? currentIndex
+      : mostComfortingIndex;
+  },
+  0
+);
+const somethingNewDishIndex = currentRecommendations.reduce(
+  (leastObviousIndex, dish, currentIndex, dishes) => {
+    const currentMatchScore = dish.match;
+    const lowestMatchScore = dishes[leastObviousIndex].match;
+
+    return currentMatchScore < lowestMatchScore
+      ? currentIndex
+      : leastObviousIndex;
+  },
+  0
+);
+
+const priorityDishIndex: Record<string, number> = {
+  "Best Overall": baseMatchIndex,
+  "Quickest": quickestDishIndex,
+  "Budget-friendly": cheapestDishIndex,
+  "Most comforting": mostComfortingDishIndex,
+  "Something new": somethingNewDishIndex,
+};
+
+
 const perfectMatch =
-  currentRecommendations[situationDishIndex[selectedSituation]];
+  currentRecommendations[priorityDishIndex[selectedPriority]];
+
+const displayedMatch =
+  surpriseIndex !== null
+    ? currentRecommendations[surpriseIndex]
+    : perfectMatch;
+    const saveMatchFeedback = async (feedback: "liked" | "disliked") => {
+  setMatchFeedback(feedback);
+
+  try {
+    const response = await fetch("/api/feedback", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        dishName: displayedMatch.name,
+        mood: selectedMood,
+        situation: selectedSituation,
+        feedback,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to save feedback");
+    }
+  } catch (error) {
+    console.error("Error saving match feedback:", error);
+  }
+};
   return (
     <main className="min-h-screen bg-[#FFF9F2] text-[#2D2926]">
 
@@ -622,6 +742,51 @@ const perfectMatch =
     </div>
 
     {/* Combined personalisation result */}
+    {/* Priority Discovery */}
+<div className="mx-auto mt-12 max-w-5xl text-center">
+  <p className="text-sm font-extrabold uppercase tracking-[0.28em] text-orange-400">
+    One last thing
+  </p>
+
+  <h3 className="mt-3 text-3xl font-extrabold tracking-tight text-white md:text-4xl">
+    What matters most right now?
+  </h3>
+
+  <p className="mx-auto mt-3 max-w-2xl text-base leading-relaxed text-white/60">
+    Give Nomzi one more clue to make your match feel even more personal.
+  </p>
+
+  <div className="mt-7 flex flex-wrap justify-center gap-3">
+    {[
+      "Best Overall",
+      "Quickest",
+      "Budget-friendly",
+      "Most comforting",
+      "Something new",
+    ].map((priority) => {
+      const isSelected = selectedPriority === priority;
+
+      return (
+        <button
+          key={priority}
+          type="button"
+          onClick={() => {
+            setSelectedPriority(priority);
+            setSurpriseIndex(null);
+            setShowPerfectMatch(false);
+          }}
+          className={`rounded-full border px-5 py-3 text-sm font-bold transition duration-300 ${
+            isSelected
+              ? "border-orange-500 bg-orange-500 text-white shadow-lg shadow-orange-500/20"
+              : "border-white/15 bg-white/[0.06] text-white/70 hover:-translate-y-1 hover:border-orange-400/60 hover:text-white"
+          }`}
+        >
+          {priority}
+        </button>
+      );
+    })}
+  </div>
+</div>
     <div className="mx-auto mt-12 max-w-4xl rounded-[2rem] border border-white/10 bg-white/[0.07] p-8 text-center backdrop-blur-xl md:p-10">
       <p className="text-sm font-semibold uppercase tracking-[0.25em] text-orange-400">
         Your Nomzi Match
@@ -637,19 +802,66 @@ const perfectMatch =
         <span className="rounded-full border border-white/15 bg-white/10 px-5 py-2 text-sm font-bold text-white">
           {selectedSituation}
         </span>
+        <span className="text-white/30">+</span>
+
+<span className="rounded-full border border-orange-400/30 bg-orange-500/10 px-5 py-2 text-sm font-bold text-orange-300">
+  {selectedPriority}
+</span>
       </div>
 
-      <p className="mx-auto mt-6 max-w-2xl text-xl font-semibold leading-relaxed text-white md:text-2xl">
-  {matchMessages[selectedMood][selectedSituation]}
-</p>
+      <div className="mx-auto mt-6 max-w-2xl">
+  <p className="text-xl font-semibold leading-relaxed text-white md:text-2xl">
+    {matchMessages[selectedMood][selectedSituation]}
+  </p>
 
-      <button
-        type="button"
-        onClick={() => setShowPerfectMatch(true)}
-        className="mt-7 rounded-full bg-white px-7 py-3.5 font-bold text-[#2D2926] shadow-lg transition hover:-translate-y-1 hover:bg-orange-50"
-      >
-        Find my perfect match →
-      </button>
+  <div className="mx-auto mt-5 max-w-xl rounded-2xl border border-orange-400/20 bg-orange-500/[0.08] px-5 py-4">
+    <p className="text-xs font-extrabold uppercase tracking-[0.22em] text-orange-400">
+      Why this match?
+    </p>
+
+    <p className="mt-2 text-sm font-medium leading-relaxed text-white/70 md:text-base">
+      {priorityMessages[selectedPriority]}
+    </p>
+  </div>
+</div>
+
+      <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
+  <button
+    type="button"
+    onClick={() => {
+      setSurpriseIndex(null);
+      setMatchFeedback(null);
+      setShowPerfectMatch(true);
+    }}
+    className="rounded-full bg-white px-7 py-3.5 font-bold text-[#2D2926] shadow-lg transition hover:-translate-y-1 hover:bg-orange-50"
+  >
+    Find my perfect match →
+  </button>
+
+  <button
+    type="button"
+    onClick={() => {
+      let randomIndex = Math.floor(
+        Math.random() * currentRecommendations.length
+      );
+
+      if (
+        currentRecommendations.length > 1 &&
+        randomIndex === surpriseIndex
+      ) {
+        randomIndex =
+          (randomIndex + 1) % currentRecommendations.length;
+      }
+
+      setSurpriseIndex(randomIndex);
+      setMatchFeedback(null);
+      setShowPerfectMatch(true);
+    }}
+    className="rounded-full border border-orange-400/50 bg-orange-500 px-7 py-3.5 font-bold text-white shadow-lg transition hover:-translate-y-1 hover:bg-orange-400"
+  >
+    Surprise me ✨
+  </button>
+</div>
     </div>
     {showPerfectMatch && (
   <div className="mx-auto mt-10 max-w-5xl overflow-hidden rounded-[2.5rem] border border-orange-400/20 bg-[#FFF9F2] text-[#2D2926] shadow-[0_30px_80px_rgba(0,0,0,0.25)]">
@@ -658,14 +870,14 @@ const perfectMatch =
       {/* Real food image */}
       <div className="relative min-h-[360px] overflow-hidden">
         <Image
-          src={perfectMatch.image}
-          alt={perfectMatch.name}
+          src={displayedMatch.image}
+          alt={displayedMatch.name}
           fill
           className="object-cover transition duration-700 hover:scale-105"
         />
 
         <div className="absolute left-6 top-6 rounded-full bg-orange-500 px-4 py-2 text-sm font-extrabold text-white shadow-lg">
-          {perfectMatch.match}% MATCH
+          {displayedMatch.match}% MATCH
         </div>
       </div>
 
@@ -688,7 +900,7 @@ const perfectMatch =
         </div>
 
         <h3 className="mt-7 text-3xl font-extrabold tracking-tight md:text-4xl">
-          {perfectMatch.name}
+          {displayedMatch.name}
         </h3>
 
         <p className="mt-4 text-lg leading-relaxed text-gray-600">
@@ -697,20 +909,105 @@ const perfectMatch =
 
         <div className="mt-8 flex flex-wrap items-center gap-3">
           <span className="rounded-full bg-white px-4 py-2 text-sm font-semibold shadow-sm">
-            ◷ {perfectMatch.time}
+            ◷ {displayedMatch.time}
           </span>
 
           <span className="rounded-full bg-white px-4 py-2 text-sm font-semibold shadow-sm">
-            {perfectMatch.price}
+            {displayedMatch.price}
           </span>
         </div>
 
         <button
           type="button"
+          onClick={() => setShowDishDetails(true)}
           className="mt-8 w-fit rounded-full bg-[#2D2926] px-7 py-3.5 font-bold text-white transition hover:-translate-y-1 hover:bg-orange-500"
         >
           View this dish →
         </button>
+        {showDishDetails && (
+  <div className="mt-8 rounded-[2rem] border border-orange-200 bg-orange-50 p-6">
+    <p className="text-sm font-extrabold uppercase tracking-[0.25em] text-orange-500">
+      A little more about your match
+    </p>
+
+    <h3 className="mt-3 text-2xl font-black text-[#2D2926]">
+      Why {displayedMatch.name} fits this moment
+    </h3>
+
+    <p className="mt-3 text-base leading-relaxed text-[#5F5A56]">
+      {displayedMatch.description} With a {displayedMatch.match}% match,
+      this pick fits your <strong>{selectedMood}</strong> mood and your{" "}
+      <strong>{selectedSituation}</strong> moment.
+    </p>
+
+    <div className="mt-5 flex flex-wrap gap-3">
+      <span className="rounded-full bg-white px-4 py-2 text-sm font-bold text-[#2D2926] shadow-sm">
+        Match: {displayedMatch.match}%
+      </span>
+
+      <span className="rounded-full bg-white px-4 py-2 text-sm font-bold text-[#2D2926] shadow-sm">
+        Time: {displayedMatch.time}
+      </span>
+
+      <span className="rounded-full bg-white px-4 py-2 text-sm font-bold text-[#2D2926] shadow-sm">
+        Price: {displayedMatch.price}
+      </span>
+
+      <span className="rounded-full bg-white px-4 py-2 text-sm font-bold text-[#2D2926] shadow-sm">
+        Comfort: {displayedMatch.comfortScore}/10
+      </span>
+    </div>
+
+    <button
+      type="button"
+      onClick={() => setShowDishDetails(false)}
+      className="mt-5 text-sm font-bold text-orange-600 transition hover:text-orange-700"
+    >
+      Show less ↑
+    </button>
+  </div>
+)}
+        <div className="mt-8 border-t border-[#2D2926]/10 pt-6">
+  <p className="text-sm font-bold text-[#2D2926]">
+    Was this a good match?
+  </p>
+
+  <div className="mt-3 flex items-center gap-3">
+    <button
+      type="button"
+      onClick={() => saveMatchFeedback("liked")}
+      className={`rounded-full border px-4 py-2 text-lg transition ${
+        matchFeedback === "liked"
+          ? "border-green-500 bg-green-100"
+          : "border-[#2D2926]/15 bg-white hover:-translate-y-1"
+      }`}
+      aria-label="Like this recommendation"
+    >
+      👍
+    </button>
+
+    <button
+      type="button"
+      onClick={() => saveMatchFeedback("disliked")}
+      className={`rounded-full border px-4 py-2 text-lg transition ${
+        matchFeedback === "disliked"
+          ? "border-orange-500 bg-orange-100"
+          : "border-[#2D2926]/15 bg-white hover:-translate-y-1"
+      }`}
+      aria-label="Dislike this recommendation"
+    >
+      👎
+    </button>
+  </div>
+
+  {matchFeedback && (
+    <p className="mt-3 text-sm font-medium text-[#2D2926]/60">
+      {matchFeedback === "liked"
+        ? "Glad this one feels right — looks like Nomzi understood the assignment. ✨"
+        : "Not quite the one? No worries — try another match and let's find something better."}
+    </p>
+  )}
+</div>
       </div>
 
     </div>
@@ -767,15 +1064,15 @@ const perfectMatch =
   <div className="mb-8 flex items-center justify-between">
     <div>
       <h3 className="text-2xl font-bold text-[#2D2926] md:text-3xl">
-        Popular near you
+        More ways to discover
       </h3>
       <p className="mt-2 text-gray-500">
-        Delicious picks people are loving right now.
+        Not sure what you're craving yet? Explore a few delicious directions.
       </p>
     </div>
 
     <span className="hidden rounded-full bg-orange-50 px-4 py-2 text-sm font-semibold text-orange-600 sm:block">
-      🔥 Trending now
+      ✨ Explore your way
     </span>
   </div>
 
@@ -783,31 +1080,31 @@ const perfectMatch =
   <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
     {[
       {
-        emoji: "🍕",
-        name: "The Pizza Studio",
-        cuisine: "Italian • Pizza • Fast Food",
+        image: "/images/creamy-paneer-pasta.jpg",
+        name: "Creamy Comforts",
+        cuisine: "Pasta • Paneer • Cozy Picks",
         rating: "4.8",
         time: "20–25 min",
-        price: "₹₹",
-        offer: "20% OFF",
+        price: "Comfort",
+        offer: "COMFORT PICK",
       },
       {
-        emoji: "🍛",
-        name: "Spice Route",
-        cuisine: "North Indian • Biryani • Curries",
+        image: "/images/fiery-chilli-paneer.jpg",
+        name: "Spice & Sizzle",
+        cuisine: "Paneer • Indo-Chinese • Bold Flavours",
         rating: "4.7",
         time: "25–30 min",
-        price: "₹₹",
-        offer: "FREE DELIVERY",
+        price: "Bold",
+        offer: "BOLD & SPICY",
       },
       {
-        emoji: "🥗",
-        name: "Green & Grain",
-        cuisine: "Healthy • Salads • Bowls",
+        image: "/images/avocado-toast.jpg",
+        name: "Fresh & Feel-Good",
+        cuisine: "Avocado • Healthy • Light Bites",
         rating: "4.9",
         time: "15–20 min",
-        price: "₹₹₹",
-        offer: "NEW ON NOMZI",
+        price: "Fresh",
+        offer: "FRESH PICK",
       },
     ].map((restaurant) => (
       <article
@@ -816,9 +1113,12 @@ const perfectMatch =
       >
         {/* Temporary visual area */}
         <div className="relative flex h-64 items-center justify-center overflow-hidden bg-gradient-to-br from-orange-100 via-orange-50 to-amber-100">
-          <span className="text-8xl transition duration-500 group-hover:scale-110">
-            {restaurant.emoji}
-          </span>
+          <Image
+  src={restaurant.image}
+  alt={restaurant.name}
+  fill
+  className="object-cover transition duration-500 group-hover:scale-105"
+/>
 
           <span className="absolute left-5 top-5 rounded-full bg-orange-500 px-4 py-2 text-xs font-bold text-white shadow-lg">
             {restaurant.offer}
