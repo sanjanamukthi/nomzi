@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 export default function Home() {
   const [selectedMood, setSelectedMood] = useState("Comfort Me");
   const [selectedSituation, setSelectedSituation] = useState("Solo Night");
@@ -378,9 +379,12 @@ const displayedMatch =
 
         {/* Sign in and cart */}
         <div className="flex items-center gap-4">
-          <button className="hidden font-semibold transition hover:text-orange-500 sm:block">
-            Sign In
-          </button>
+          <Link
+  href="/login"
+  className="hidden font-semibold transition hover:text-orange-500 sm:block"
+>
+  Sign In
+</Link>
 
           <button
             aria-label="Open shopping cart"
