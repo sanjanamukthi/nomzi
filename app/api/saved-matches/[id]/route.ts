@@ -47,3 +47,42 @@ export async function DELETE(
     );
   }
 }
+export async function PUT(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    const body = await request.json();
+
+    const { dishName, mood, situation, note } = body;
+
+    const updatedMatch = await prisma.savedMatch.update({
+      where: {
+        id: Number(id),
+      },
+      data: {
+        dishName,
+        mood,
+        situation,
+        note,
+      },
+    });
+
+    return NextResponse.json({
+      message: "Saved match updated successfully",
+      updatedMatch,
+    });
+  } catch (error) {
+    console.error(error);
+
+    return NextResponse.json(
+      {
+        error: "Internal server error",
+      },
+      {
+        status: 500,
+      }
+    );
+  }
+}
