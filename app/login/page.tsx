@@ -36,7 +36,7 @@ export default function LoginPage() {
         setMessage("✅ Login successful!");
 
         setTimeout(() => {
-          router.push("/");
+          router.push("/dashboard");
         }, 1000);
       } else {
         setMessage(data.error || "Login failed");
