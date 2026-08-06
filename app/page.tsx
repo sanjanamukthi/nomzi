@@ -3,8 +3,10 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { dishes } from "./data/dishes";
 export default function Home() {
   const [selectedMood, setSelectedMood] = useState("Comfort Me");
+  const [searchTerm, setSearchTerm] = useState("");
   const [selectedSituation, setSelectedSituation] = useState("Solo Night");
   const [selectedPriority, setSelectedPriority] = useState("Best Overall");
   const [showPerfectMatch, setShowPerfectMatch] = useState(false);
@@ -113,128 +115,7 @@ const situations = [
     subtitle: "Fast, satisfying and back to your day",
     image: "/images/quick-break.jpg",
   },
-];const moodRecommendations = {
-  "Comfort Me": [
-    {
-      name: "Creamy Paneer Pasta",
-      description: "Rich, creamy and deeply comforting.",
-      time: "25–30 min",
-      price: "₹289",
-      match: 97,
-      comfortScore: 10,
-      image: "/images/creamy-paneer-pasta.jpg",
-    },
-    {
-      name: "Paneer Butter Masala",
-      description: "Warm, familiar flavours made for cozy days.",
-      time: "30–35 min",
-      price: "₹319",
-      match: 95,
-      comfortScore: 9,
-      image: "/images/paneer-butter-masala.jpg",
-    },
-    {
-      name: "Cheesy Baked Momos",
-      description: "Golden, cheesy and impossible not to love.",
-      time: "20–25 min",
-      price: "₹229",
-      match: 92,
-      comfortScore: 9,
-      image: "/images/cheesy-baked-momos.jpg",
-    },
-  ],
-
-  "Spice It Up": [
-    {
-      name: "Fiery Chilli Paneer",
-      description: "Bold, smoky and packed with serious heat.",
-      time: "20–25 min",
-      price: "₹269",
-      match: 98,
-      comfortScore: 7,
-      image: "/images/fiery-chilli-paneer.jpg",
-    },
-    {
-      name: "Schezwan Noodles",
-      description: "Wok-tossed noodles with a fiery kick.",
-      time: "20–25 min",
-      price: "₹239",
-      match: 96,
-      comfortScore: 8,
-      image: "/images/schezwan-noodles.jpg",
-    },
-    {
-      name: "Spicy Tandoori Momos",
-      description: "Smoky, juicy and unapologetically spicy.",
-      time: "25–30 min",
-      price: "₹249",
-      match: 94,
-      comfortScore: 7,
-      image: "/images/spicy-tandoori-momos.jpg",
-    },
-  ],
-
-  "Healthy & Light": [
-    {
-      name: "Paneer Power Bowl",
-      description: "Protein-packed, colourful and satisfying.",
-      time: "20–25 min",
-      price: "₹299",
-      match: 97,
-      comfortScore: 7,
-      image: "/images/paneer-power-bowl.jpg",
-    },
-    {
-      name: "Avocado Toast",
-      description: "Fresh, creamy and perfectly balanced.",
-      time: "15–20 min",
-      price: "₹259",
-      match: 94,
-      comfortScore: 6,
-      image: "/images/avocado-toast.jpg",
-    },
-    {
-      name: "Mediterranean Salad",
-      description: "Crisp vegetables and bright, fresh flavours.",
-      time: "15–20 min",
-      price: "₹279",
-      match: 92,
-      comfortScore: 5,
-      image: "/images/mediterranean-salad.jpg",
-    },
-  ],
-
-  "Sweet Escape": [
-    {
-      name: "Chocolate Lava Cake",
-      description: "Warm outside, molten chocolate inside.",
-      time: "15–20 min",
-      price: "₹199",
-      match: 99,
-      comfortScore: 9,
-      image: "/images/chocolate-lava-cake.jpg",
-    },
-    {
-      name: "Classic Tiramisu",
-      description: "Creamy, delicate and beautifully indulgent.",
-      time: "20–25 min",
-      price: "₹249",
-      match: 96,
-      comfortScore: 8,
-      image: "/images/classic-tiramisu.jpg",
-    },
-    {
-      name: "Belgian Waffle",
-      description: "Crisp, golden and finished with chocolate.",
-      time: "15–20 min",
-      price: "₹219",
-      match: 94,
-      comfortScore: 8,
-      image: "/images/belgian-waffle.jpg",
-    },
-  ],
-};
-
+];
 const priorityMessages: Record<string, string> = {
   "Best Overall":
     "Nomzi is balancing your mood and situation to find the strongest overall match for this moment.",
@@ -252,8 +133,13 @@ const priorityMessages: Record<string, string> = {
     "Ready to break from the usual? Nomzi is choosing something different that still fits the mood you're in.",
 };
 
-const currentRecommendations =
-  moodRecommendations[selectedMood as keyof typeof moodRecommendations];
+const currentRecommendations = dishes.filter(
+  (dish) => dish.mood === selectedMood
+);
+
+const searchResults = dishes.filter((dish) =>
+  dish.name.toLowerCase().includes(searchTerm.toLowerCase())
+);
   const situationDishIndex: Record<string, number> = {
   "Solo Night": 0,
   "Study Fuel": 1,
@@ -351,6 +237,37 @@ const displayedMatch =
     console.error("Error saving match feedback:", error);
   }
 };
+async function addToCart() {
+  try {
+    const user = JSON.parse(localStorage.getItem("nomziUser") || "{}");
+
+    if (!user.id) {
+      alert("Please login first.");
+      return;
+    }
+
+    const response = await fetch("/api/cart", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        dishName: displayedMatch.name,
+        quantity: 1,
+        price: Number(displayedMatch.price.replace(/[^\d]/g, "")),
+        userId: user.id,
+      }),
+    });
+
+    if (response.ok) {
+      alert("Added to cart!");
+    } else {
+      alert("Failed to add to cart.");
+    }
+  } catch (error) {
+    console.error(error);
+  }
+}
   return (
     <main className="min-h-screen bg-[#FFF9F2] text-[#2D2926]">
 
@@ -372,9 +289,12 @@ const displayedMatch =
             Explore
           </a>
 
-          <a href="#offers" className="transition hover:text-orange-500">
-            Offers
-          </a>
+          <Link
+  href="/offers"
+  className="transition hover:text-orange-500"
+>
+  Offers
+</Link>
         </div>
 
         {/* Sign in and cart */}
@@ -386,12 +306,12 @@ const displayedMatch =
   Sign In
 </Link>
 
-          <button
-            aria-label="Open shopping cart"
-            className="rounded-full bg-orange-500 px-5 py-2.5 font-semibold text-white shadow-md transition hover:bg-orange-600"
-          >
-            Cart 🛒
-          </button>
+          <Link
+  href="/cart"
+  className="rounded-full bg-orange-500 px-5 py-2.5 font-semibold text-white shadow-md transition hover:bg-orange-600"
+>
+  Cart 🛒
+</Link>
         </div>
       </nav>
 
@@ -420,16 +340,61 @@ const displayedMatch =
           {/* Search bar */}
           <div className="mt-8 flex max-w-2xl flex-col gap-3 rounded-2xl bg-white p-3 shadow-lg sm:flex-row">
             <input
-              type="text"
-              placeholder="Search for dishes or restaurants..."
-              aria-label="Search for dishes or restaurants"
-              className="flex-1 rounded-xl px-5 py-4 outline-none"
-            />
+  type="text"
+  placeholder="Search for dishes..."
+  value={searchTerm}
+  onChange={(e) => setSearchTerm(e.target.value)}
+  className="flex-1 rounded-xl px-5 py-4 outline-none"
+  aria-label="Search for dishes"
+/>
 
             <button className="rounded-xl bg-orange-500 px-7 py-4 font-bold text-white transition hover:bg-orange-600">
               Find Food
             </button>
           </div>
+
+          {searchTerm.trim() !== "" && (
+  <div className="mt-4 overflow-hidden rounded-2xl border border-orange-100 bg-white shadow-lg">
+
+    {searchResults.length === 0 ? (
+  <p className="p-5 text-center text-gray-500">
+    🍽️ No dishes found.
+  </p>
+) : (
+  searchResults.map((food) => (
+    <Link
+      key={food.id}
+      href={`/restaurant/${food.id}`}
+       className="group flex items-center gap-4 border-b border-orange-100 p-4 transition hover:bg-orange-50 last:border-b-0"
+    >
+      <div className="relative h-16 w-16 overflow-hidden rounded-xl">
+        <Image
+          src={food.image}
+          alt={food.name}
+          fill
+          className="object-cover"
+        />
+      </div>
+
+      <div className="flex-1">
+        <h3 className="font-bold text-[#2D2926]">
+          {food.name}
+        </h3>
+
+        <p className="text-sm text-gray-500">
+          {food.description}
+        </p>
+      </div>
+
+      <span className="font-bold text-orange-500">
+  {food.price}
+</span>
+    </Link>
+  ))
+)}
+
+  </div>
+)}
 
           {/* Trust message */}
           <p className="mt-5 text-sm text-gray-500">
@@ -578,58 +543,63 @@ const displayedMatch =
       {selectedMood} — we&apos;re finding something that fits.
     </p>
   </div>
-  {/* Dynamic mood recommendations */}
-<div className="mx-auto mt-16 max-w-7xl">
 
-  {/* Recommendation heading */}
-  <div className="mb-8 flex flex-col justify-between gap-4 md:flex-row md:items-end">
-    <div>
-      <p className="mb-3 text-sm font-bold uppercase tracking-[0.25em] text-orange-500">
-        Picked for your mood
-      </p>
+  
 
-      <h3 className="text-3xl font-extrabold tracking-tight text-[#2D2926] md:text-4xl">
-        Your perfect matches
-      </h3>
+    {searchTerm.trim() === "" && (
+  <>
+    {/* Dynamic mood recommendations */}
+    <div className="mx-auto mt-16 max-w-7xl">
 
-      <p className="mt-3 text-base text-gray-500">
-        Handpicked dishes that match your{" "}
-        <span className="font-semibold text-orange-500">
-          {selectedMood}
-        </span>{" "}
-        mood.
-      </p>
-    </div>
+      {/* Recommendation heading */}
+      <div className="mb-8 flex flex-col justify-between gap-4 md:flex-row md:items-end">
+        <div>
+          <p className="mb-3 text-sm font-bold uppercase tracking-[0.25em] text-orange-500">
+            Picked for your mood
+          </p>
 
-    <div className="w-fit rounded-full border border-orange-100 bg-white px-5 py-3 text-sm font-semibold text-[#2D2926] shadow-sm">
-      ✨ Personalised for you
-    </div>
-  </div>
+          <h3 className="text-3xl font-extrabold tracking-tight text-[#2D2926] md:text-4xl">
+            Your perfect matches
+          </h3>
 
-  {/* Recommendation cards */}
-  <div className="grid gap-6 md:grid-cols-3">
-    {currentRecommendations.map((food) => (
-      <article
-        key={food.name}
-        className="group overflow-hidden rounded-[2rem] border border-orange-100 bg-white shadow-[0_18px_50px_rgba(45,41,38,0.08)] transition duration-300 hover:-translate-y-2 hover:shadow-[0_25px_65px_rgba(45,41,38,0.14)]"
-      >
-        {/* Temporary visual area — real food images come next */}
-        <div className="relative flex h-52 items-center justify-center overflow-hidden bg-gradient-to-br from-orange-50 via-[#FFF9F2] to-amber-50">
-
-          <div className="absolute left-5 top-5 rounded-full bg-orange-500 px-4 py-2 text-xs font-bold text-white shadow-md">
-            {food.match}% MATCH
-          </div>
-
-          <div className="flex h-28 w-28 items-center justify-center rounded-full border border-orange-100 bg-white text-5xl shadow-lg">
-            <Image
-  src={food.image}
-  alt={food.name}
-  fill
-  className="object-cover transition duration-500 group-hover:scale-105"
-  sizes="(max-width: 768px) 100vw, 33vw"
-/>
-          </div>
+          <p className="mt-3 text-base text-gray-500">
+            Handpicked dishes that match your{" "}
+            <span className="font-semibold text-orange-500">
+              {selectedMood}
+            </span>{" "}
+            mood.
+          </p>
         </div>
+
+        <div className="w-fit rounded-full border border-orange-100 bg-white px-5 py-3 text-sm font-semibold text-[#2D2926] shadow-sm">
+          ✨ Personalised for you
+        </div>
+      </div>
+
+      {/* Recommendation cards */}
+      <div className="grid gap-6 md:grid-cols-3">
+        {currentRecommendations.map((food) => (
+          <article
+            key={food.name}
+            className="group overflow-hidden rounded-[2rem] border border-orange-100 bg-white shadow-[0_18px_50px_rgba(45,41,38,0.08)] transition duration-300 hover:-translate-y-2 hover:shadow-[0_25px_65px_rgba(45,41,38,0.14)]"
+          >
+            {/* Temporary visual area */}
+            <div className="relative flex h-52 items-center justify-center overflow-hidden bg-gradient-to-br from-orange-50 via-[#FFF9F2] to-amber-50">
+
+              <div className="absolute left-5 top-5 rounded-full bg-orange-500 px-4 py-2 text-xs font-bold text-white shadow-md">
+                {food.match}% MATCH
+              </div>
+
+              <div className="flex h-28 w-28 items-center justify-center rounded-full border border-orange-100 bg-white text-5xl shadow-lg">
+                <Image
+                  src={food.image}
+                  alt={food.name}
+                  fill
+                  className="object-cover transition duration-500 group-hover:scale-105"
+                  sizes="(max-width: 768px) 100vw, 33vw"
+                />
+              </div>
+            </div>
 
         {/* Card information */}
         <div className="p-6">
@@ -652,18 +622,22 @@ const displayedMatch =
               ◷ {food.time}
             </span>
 
-            <button
-              type="button"
-              className="rounded-full bg-[#2D2926] px-5 py-2.5 text-sm font-bold text-white transition duration-300 hover:bg-orange-500"
-            >
-              View dish →
-            </button>
+            <Link
+  href={`/restaurant/${food.id}`}
+  className="rounded-full bg-[#2D2926] px-5 py-2.5 text-sm font-bold text-white transition duration-300 hover:bg-orange-500"
+>
+  View dish →
+</Link>
           </div>
-        </div>
+                </div>
       </article>
     ))}
-  </div>
-</div>
+      </div>
+    </div>
+
+  </>
+)}
+
 </section>
       
       
@@ -928,6 +902,13 @@ const displayedMatch =
         >
           View this dish →
         </button>
+        <button
+  type="button"
+  onClick={addToCart}
+  className="mt-4 w-fit rounded-full bg-orange-500 px-7 py-3.5 font-bold text-white transition hover:bg-orange-600"
+>
+  Add to Cart
+</button>
         {showDishDetails && (
   <div className="mt-8 rounded-[2rem] border border-orange-200 bg-orange-50 p-6">
     <p className="text-sm font-extrabold uppercase tracking-[0.25em] text-orange-500">
@@ -1040,9 +1021,12 @@ const displayedMatch =
       </p>
     </div>
 
-    <button className="w-fit rounded-full border border-gray-200 bg-[#FFF9F2] px-6 py-3 font-semibold text-[#2D2926] transition duration-300 hover:border-orange-500 hover:text-orange-500">
-      View all restaurants →
-    </button>
+    <Link
+  href="/restaurants"
+  className="w-fit rounded-full border border-gray-200 bg-[#FFF9F2] px-6 py-3 font-semibold text-[#2D2926] transition duration-300 hover:border-orange-500 hover:text-orange-500"
+>
+  View all restaurants →
+</Link>
   </div>
 
   {/* Food categories */}
@@ -1083,34 +1067,37 @@ const displayedMatch =
   {/* Restaurant cards */}
   <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
     {[
-      {
-        image: "/images/creamy-paneer-pasta.jpg",
-        name: "Creamy Comforts",
-        cuisine: "Pasta • Paneer • Cozy Picks",
-        rating: "4.8",
-        time: "20–25 min",
-        price: "Comfort",
-        offer: "COMFORT PICK",
-      },
-      {
-        image: "/images/fiery-chilli-paneer.jpg",
-        name: "Spice & Sizzle",
-        cuisine: "Paneer • Indo-Chinese • Bold Flavours",
-        rating: "4.7",
-        time: "25–30 min",
-        price: "Bold",
-        offer: "BOLD & SPICY",
-      },
-      {
-        image: "/images/avocado-toast.jpg",
-        name: "Fresh & Feel-Good",
-        cuisine: "Avocado • Healthy • Light Bites",
-        rating: "4.9",
-        time: "15–20 min",
-        price: "Fresh",
-        offer: "FRESH PICK",
-      },
-    ].map((restaurant) => (
+  {
+    id: 1,
+    image: "/images/creamy-paneer-pasta.jpg",
+    name: "Creamy Comforts",
+    cuisine: "Pasta • Paneer • Cozy Picks",
+    rating: "4.8",
+    time: "20–25 min",
+    price: "Comfort",
+    offer: "COMFORT PICK",
+  },
+  {
+    id: 4,
+    image: "/images/fiery-chilli-paneer.jpg",
+    name: "Spice & Sizzle",
+    cuisine: "Paneer • Indo-Chinese • Bold Flavours",
+    rating: "4.7",
+    time: "25–30 min",
+    price: "Bold",
+    offer: "BOLD & SPICY",
+  },
+  {
+    id: 8,
+    image: "/images/avocado-toast.jpg",
+    name: "Fresh & Feel-Good",
+    cuisine: "Avocado • Healthy • Light Bites",
+    rating: "4.9",
+    time: "15–20 min",
+    price: "Fresh",
+    offer: "FRESH PICK",
+  },
+].map((restaurant) => (
       <article
         key={restaurant.name}
         className="group overflow-hidden rounded-[2rem] border border-orange-100 bg-[#FFF9F2] shadow-[0_12px_40px_rgba(45,41,38,0.08)] transition duration-500 hover:-translate-y-2 hover:shadow-[0_24px_60px_rgba(45,41,38,0.14)]"
@@ -1155,9 +1142,15 @@ const displayedMatch =
           </div>
 
           <div className="mt-6 flex items-center justify-between border-t border-orange-100 pt-5 text-sm font-medium text-gray-600">
-            <span>🕒 {restaurant.time}</span>
-            <span>{restaurant.price}</span>
-          </div>
+  <span>🕒 {restaurant.time}</span>
+
+  <Link
+  href={`/restaurant/${restaurant.id}`}
+    className="rounded-full bg-[#2D2926] px-5 py-3 font-semibold text-white transition hover:bg-orange-500"
+  >
+    View Dish →
+  </Link>
+</div>
         </div>
       </article>
     ))}

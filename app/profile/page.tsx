@@ -1,8 +1,25 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 
 export default function ProfilePage() {
+  const [user, setUser] = useState({
+  name: "",
+  email: "",
+});
+
+useEffect(() => {
+  const storedUser = localStorage.getItem("nomziUser");
+
+  if (storedUser) {
+    setUser(JSON.parse(storedUser));
+  }
+}, []);
+function handleLogout() {
+  localStorage.removeItem("nomziUser");
+  window.location.href = "/login";
+}
   return (
     <div className="min-h-screen bg-[#FFF8F2] p-8">
       <div className="mx-auto max-w-4xl">
@@ -35,7 +52,7 @@ export default function ProfilePage() {
 
             <input
               type="text"
-              value="Sanjana Mukthi"
+              value={user.name}
               readOnly
               className="w-full rounded-xl border border-gray-300 p-4 text-gray-900"
             />
@@ -48,7 +65,7 @@ export default function ProfilePage() {
 
             <input
               type="email"
-              value="sanjana@example.com"
+              value={user.email}
               readOnly
               className="w-full rounded-xl border border-gray-300 p-4 text-gray-900"
             />
@@ -72,9 +89,12 @@ export default function ProfilePage() {
               Edit Profile
             </button>
 
-            <button className="rounded-xl border border-red-500 px-6 py-3 font-semibold text-red-500 transition hover:bg-red-500 hover:text-white">
-              Logout
-            </button>
+            <button
+  onClick={handleLogout}
+  className="rounded-xl border border-red-500 px-6 py-3 font-semibold text-red-500 transition hover:bg-red-500 hover:text-white"
+>
+  Logout
+</button>
           </div>
 
         </div>

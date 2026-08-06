@@ -14,6 +14,7 @@ interface SavedMatch {
 export default function SavedMatchesPage() {
   const [matches, setMatches] = useState<SavedMatch[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
   const [editingId, setEditingId] = useState<number | null>(null);
 
 const [editDishName, setEditDishName] = useState("");
@@ -111,13 +112,35 @@ async function updateMatch(id: number) {
         </div>
 
         {/* Content */}
+        <div className="mb-6">
+  <input
+    type="text"
+    placeholder="Search saved meals..."
+    value={searchTerm}
+    onChange={(e) => setSearchTerm(e.target.value)}
+    className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-gray-900 placeholder-gray-500 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500"
+  />
+</div>
         {loading ? (
           <p className="text-gray-600">Loading...</p>
         ) : matches.length === 0 ? (
           <p className="text-gray-500">No saved matches yet.</p>
         ) : (
           <div className="grid gap-6">
-            {matches.map((match) => (
+            {matches.filter((match) =>
+  match.dishName.toLowerCase().includes(searchTerm.toLowerCase())
+).length === 0 ? (
+  <div className="rounded-2xl bg-white p-8 text-center shadow-lg">
+    <p className="text-lg font-medium text-gray-600">
+      No matching meals found.
+    </p>
+  </div>
+) : (
+  matches
+    .filter((match) =>
+      match.dishName.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+    .map((match) => (
               <div
                 key={match.id}
                 className="rounded-2xl bg-white p-6 shadow-lg transition hover:shadow-xl"
@@ -220,7 +243,8 @@ async function updateMatch(id: number) {
   )}
 </div>
               </div>
-            ))}
+            ))
+)}
           </div>
         )}
       </div>

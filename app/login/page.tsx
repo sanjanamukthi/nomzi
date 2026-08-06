@@ -31,14 +31,20 @@ export default function LoginPage() {
       });
 
       const data = await response.json();
+      console.log("Response:", data);
 
-      if (response.ok) {
-        setMessage("✅ Login successful!");
+     if (response.ok) {
+  localStorage.setItem(
+    "nomziUser",
+    JSON.stringify(data.user)
+  );
 
-        setTimeout(() => {
-          router.push("/dashboard");
-        }, 1000);
-      } else {
+  setMessage("✅ Login successful!");
+
+  setTimeout(() => {
+    router.push("/dashboard");
+  }, 1000);
+} else {
         setMessage(data.error || "Login failed");
       }
     } catch (error) {
