@@ -52,6 +52,23 @@ if (existingItem) {
   return NextResponse.json(updatedItem);
 }
 console.log("Creating new cart item");
+
+let user = await prisma.user.findUnique({
+  where: { id: body.userId },
+});
+
+if (!user) {
+  user = await prisma.user.create({
+    data: {
+      name: "Demo User",
+      email: "demo@nomzi.app",
+      passwordHash: "demo",
+    },
+  });
+
+  body.userId = user.id;
+}
+
 const newItem = await prisma.cartItem.create({
   data: {
     dishName: body.dishName,
